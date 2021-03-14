@@ -13,11 +13,9 @@ export const NavBar: React.FC<NavBarProps> = ({}) => {
   const [{ fetching: logoutFetching }, logout] = useLogoutMutation();
   let body = null;
 
-  if (fetching) {
-    body = null;
-  } else if (!data?.me) {
+  if (!data?.me || fetching) {
     body = (
-      <>
+      <Flex>
         <NextLink href="/login">
           <Link color="white" mx={2}>
             Login
@@ -28,7 +26,7 @@ export const NavBar: React.FC<NavBarProps> = ({}) => {
             Register
           </Link>
         </NextLink>
-      </>
+      </Flex>
     );
   } else {
     body = (
@@ -50,12 +48,22 @@ export const NavBar: React.FC<NavBarProps> = ({}) => {
   }
 
   return (
-    <Flex bg="teal" p={4}>
-      <Box mr={"auto"}>
-        <Heading as="h3" size="md" color="white">
+    <Flex zIndex={1} position="sticky" top={0} bg="teal" p={4}>
+      <Flex mr={"auto"}>
+        <Heading mx={12} as="h3" size="md" color="white">
           Flux
         </Heading>
-      </Box>
+        <NextLink href="/">
+          <Link color="white" mx={2}>
+            Home
+          </Link>
+        </NextLink>
+        <NextLink href="/create-post">
+          <Link color="white" mx={2}>
+            Create Post
+          </Link>
+        </NextLink>
+      </Flex>
       <Box ml={"auto"}>{body}</Box>
     </Flex>
   );

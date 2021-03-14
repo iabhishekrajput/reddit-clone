@@ -1,8 +1,8 @@
-query GetAllPosts {
-  getAllPosts {
-    id
-    title
-    createdAt
-    updatedAt
+query GetAllPosts($limit: Int!, $cursor: String) {
+  getAllPosts(limit: $limit, cursor: $cursor) {
+    hasMore
+    posts {
+      ...PostSnippet
+    }
   }
 }
