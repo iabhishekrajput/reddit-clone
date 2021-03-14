@@ -126,7 +126,6 @@ export class PostResolver {
   async getAllPosts(
     @Arg("limit", () => Int) limit: number,
     @Arg("cursor", () => String, { nullable: true }) cursor: string | null
-    // @Ctx() { req }: MyContext
   ): Promise<PaginatedPosts> {
     const realLimit = Math.min(50, limit);
     const realLimitPlusOne = realLimit + 1;
@@ -153,15 +152,8 @@ export class PostResolver {
   }
 
   @Query(() => Post, { nullable: true })
-  getPostById(@Arg("id") id: number): Promise<Post | undefined> {
-    const result = getConnection()
-      .getRepository(Post)
-      .createQueryBuilder("post")
-      .innerJoinAndSelect("post.creator", "creator")
-      .where("post.id = :id", { id })
-      .getOne();
-
-    return result;
+  getPostById(@Arg("id", () => Int) id: number): Promise<Post | undefined> {
+    return Post.findOne(id, { relations: ["creator"] });
   }
 
   @Mutation(() => Post)
@@ -175,14 +167,7 @@ export class PostResolver {
       creatorId: req.session.userId,
     }).save();
 
-    const result = await getConnection()
-      .getRepository(Post)
-      .createQueryBuilder("post")
-      .innerJoinAndSelect("post.creator", "creator")
-      .where("post.id = :id", { id: post.id })
-      .getOne();
-
-    return result;
+    return Post.findOne(post.id, { relations: ["creator"] });
   }
 
   @Mutation(() => Post, { nullable: true })

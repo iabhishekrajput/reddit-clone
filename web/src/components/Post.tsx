@@ -1,7 +1,8 @@
 import React, { useState } from "react";
 import { TriangleUpIcon, TriangleDownIcon, CheckIcon } from "@chakra-ui/icons";
-import { Flex, Box, IconButton, Heading, Text } from "@chakra-ui/react";
+import { Flex, Box, IconButton, Heading, Text, Link } from "@chakra-ui/react";
 import { PostSnippetFragment, useVoteMutation } from "../generated/graphql";
+import NextLink from "next/link";
 
 interface PostProps {
   post: PostSnippetFragment;
@@ -74,7 +75,11 @@ const Post: React.FC<PostProps> = ({ post }) => {
         </Box>
       </Flex>
       <Box>
-        <Heading fontSize="xl">{post.title}</Heading>
+        <NextLink href="/post/[id]" as={`/post/${post.id}`}>
+          <Link>
+            <Heading fontSize="xl">{post.title}</Heading>
+          </Link>
+        </NextLink>
         <Text as="sub">Posted by {post.creator.username}</Text>
         <Text mt={4}>{post.textSnippet}</Text>
       </Box>

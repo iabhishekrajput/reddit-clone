@@ -1,8 +1,19 @@
 import React from "react";
-import { Box, Button, Flex, Heading, Link } from "@chakra-ui/react";
+import {
+  Avatar,
+  Box,
+  Text,
+  Flex,
+  Link,
+  Menu,
+  MenuButton,
+  MenuItem,
+  MenuList,
+} from "@chakra-ui/react";
 import NextLink from "next/link";
 import { useLogoutMutation, useMeQuery } from "../generated/graphql";
 import { isServer } from "../utils/isServer";
+import { ChevronDownIcon, ChevronUpIcon } from "@chakra-ui/icons";
 
 interface NavBarProps {}
 
@@ -10,7 +21,7 @@ export const NavBar: React.FC<NavBarProps> = ({}) => {
   const [{ data, fetching }] = useMeQuery({
     pause: isServer(),
   });
-  const [{ fetching: logoutFetching }, logout] = useLogoutMutation();
+  const [, logout] = useLogoutMutation();
   let body = null;
 
   if (!data?.me || fetching) {
@@ -30,41 +41,64 @@ export const NavBar: React.FC<NavBarProps> = ({}) => {
     );
   } else {
     body = (
-      <Flex color="white">
-        <Box mx={2}>{data.me.username}</Box>
-        <Button
-          variant="link"
-          color="white"
-          mx={2}
-          onClick={() => {
-            logout();
-          }}
-          isLoading={logoutFetching}
-        >
-          Logout
-        </Button>
+      <Flex color="white" alignItems="center">
+        <Box>
+          <NextLink href="/create-post">
+            <Link mx={4}>Create Post</Link>
+          </NextLink>
+        </Box>
+        <Box>
+          <Menu>
+            {({ isOpen }) => (
+              <>
+                <Link>
+                  <MenuButton
+                    as={Text}
+                    isActive={isOpen}
+                    onMouseOver={() => {}}
+                  >
+                    <Flex alignItems="center">
+                      <Avatar size="xs" ml={2} />
+                      <Box mx={2}>
+                        {data.me !== null && typeof data.me !== "undefined"
+                          ? data.me.username
+                          : "User"}
+                      </Box>
+                      {isOpen ? <ChevronUpIcon /> : <ChevronDownIcon />}
+                    </Flex>
+                  </MenuButton>
+                </Link>
+                <MenuList as={Text} color="black">
+                  <MenuItem
+                    onClick={() => {
+                      logout();
+                    }}
+                  >
+                    Logout
+                  </MenuItem>
+                </MenuList>
+              </>
+            )}
+          </Menu>
+        </Box>
       </Flex>
     );
   }
 
   return (
     <Flex zIndex={1} position="sticky" top={0} bg="teal" p={4}>
-      <Flex mr={"auto"}>
-        <Heading mx={12} as="h3" size="md" color="white">
-          Flux
-        </Heading>
-        <NextLink href="/">
-          <Link color="white" mx={2}>
-            Home
-          </Link>
-        </NextLink>
-        <NextLink href="/create-post">
-          <Link color="white" mx={2}>
-            Create Post
-          </Link>
-        </NextLink>
+      <Flex align="center" flex={1} margin="auto" maxW={800}>
+        <Box mr={"auto"}>
+          <Flex color="white">
+            <NextLink href="/">
+              <Link mx={2} fontWeight="bold">
+                LiReddit
+              </Link>
+            </NextLink>
+          </Flex>
+        </Box>
+        <Box ml={"auto"}>{body}</Box>
       </Flex>
-      <Box ml={"auto"}>{body}</Box>
     </Flex>
   );
 };

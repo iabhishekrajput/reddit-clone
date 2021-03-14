@@ -30,7 +30,7 @@ export type QueryGetAllPostsArgs = {
 
 
 export type QueryGetPostByIdArgs = {
-  id: Scalars['Float'];
+  id: Scalars['Int'];
 };
 
 export type PaginatedPosts = {
@@ -45,13 +45,13 @@ export type Post = {
   title: Scalars['String'];
   text: Scalars['String'];
   points: Scalars['Float'];
-  voteStatus?: Maybe<Scalars['Int']>;
   creatorId: Scalars['Float'];
   creator: User;
   updoots: User;
   createdAt: Scalars['String'];
   updatedAt: Scalars['String'];
   textSnippet: Scalars['String'];
+  voteStatus: Scalars['Int'];
 };
 
 export type User = {
@@ -274,6 +274,23 @@ export type GetAllPostsQuery = (
   ) }
 );
 
+export type GetPostByIdQueryVariables = Exact<{
+  id: Scalars['Int'];
+}>;
+
+
+export type GetPostByIdQuery = (
+  { __typename?: 'Query' }
+  & { getPostById?: Maybe<(
+    { __typename?: 'Post' }
+    & Pick<Post, 'id' | 'title' | 'text' | 'points' | 'voteStatus' | 'createdAt' | 'updatedAt'>
+    & { creator: (
+      { __typename?: 'User' }
+      & Pick<User, 'id' | 'username'>
+    ) }
+  )> }
+);
+
 export type MeQueryVariables = Exact<{ [key: string]: never; }>;
 
 
@@ -407,6 +424,27 @@ export const GetAllPostsDocument = gql`
 
 export function useGetAllPostsQuery(options: Omit<Urql.UseQueryArgs<GetAllPostsQueryVariables>, 'query'> = {}) {
   return Urql.useQuery<GetAllPostsQuery>({ query: GetAllPostsDocument, ...options });
+};
+export const GetPostByIdDocument = gql`
+    query GetPostById($id: Int!) {
+  getPostById(id: $id) {
+    id
+    title
+    text
+    points
+    voteStatus
+    creator {
+      id
+      username
+    }
+    createdAt
+    updatedAt
+  }
+}
+    `;
+
+export function useGetPostByIdQuery(options: Omit<Urql.UseQueryArgs<GetPostByIdQueryVariables>, 'query'> = {}) {
+  return Urql.useQuery<GetPostByIdQuery>({ query: GetPostByIdDocument, ...options });
 };
 export const MeDocument = gql`
     query Me {
