@@ -2,18 +2,18 @@ import React from "react";
 import {
   Avatar,
   Box,
-  Text,
   Flex,
   Link,
   Menu,
   MenuButton,
   MenuItem,
   MenuList,
+  Text,
 } from "@chakra-ui/react";
 import NextLink from "next/link";
 import { useLogoutMutation, useMeQuery } from "../generated/graphql";
 import { isServer } from "../utils/isServer";
-import { ChevronDownIcon, ChevronUpIcon } from "@chakra-ui/icons";
+import { ChevronDownIcon } from "@chakra-ui/icons";
 
 interface NavBarProps {}
 
@@ -47,38 +47,30 @@ export const NavBar: React.FC<NavBarProps> = ({}) => {
             <Link mx={4}>Create Post</Link>
           </NextLink>
         </Box>
-        <Box>
+        <Box alignItems="center">
           <Menu>
-            {({ isOpen }) => (
-              <>
-                <Link>
-                  <MenuButton
-                    as={Text}
-                    isActive={isOpen}
-                    onMouseOver={() => {}}
-                  >
-                    <Flex alignItems="center">
-                      <Avatar size="xs" ml={2} />
-                      <Box mx={2}>
-                        {data.me !== null && typeof data.me !== "undefined"
-                          ? data.me.username
-                          : "User"}
-                      </Box>
-                      {isOpen ? <ChevronUpIcon /> : <ChevronDownIcon />}
-                    </Flex>
-                  </MenuButton>
-                </Link>
-                <MenuList as={Text} color="black">
-                  <MenuItem
-                    onClick={() => {
-                      logout();
-                    }}
-                  >
-                    Logout
-                  </MenuItem>
-                </MenuList>
-              </>
-            )}
+            <Link>
+              <MenuButton as={Box}>
+                <Flex alignItems="center">
+                  <Avatar size="xs" ml={2} />
+                  <Box mx={2}>
+                    {data.me !== null && typeof data.me !== "undefined"
+                      ? data.me.username
+                      : "User"}
+                  </Box>
+                  <ChevronDownIcon />
+                </Flex>
+              </MenuButton>
+            </Link>
+            <MenuList>
+              <MenuItem
+                onClick={() => {
+                  logout();
+                }}
+              >
+                <Text color="black">Logout</Text>
+              </MenuItem>
+            </MenuList>
           </Menu>
         </Box>
       </Flex>

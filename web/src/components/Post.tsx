@@ -1,8 +1,20 @@
 import React, { useState } from "react";
-import { TriangleUpIcon, TriangleDownIcon, CheckIcon } from "@chakra-ui/icons";
+import {
+  TriangleUpIcon,
+  TriangleDownIcon,
+  CheckIcon,
+  DeleteIcon,
+  EditIcon,
+} from "@chakra-ui/icons";
 import { Flex, Box, IconButton, Heading, Text, Link } from "@chakra-ui/react";
-import { PostSnippetFragment, useVoteMutation } from "../generated/graphql";
+import {
+  PostSnippetFragment,
+  useDeletePostMutation,
+  useMeQuery,
+  useVoteMutation,
+} from "../generated/graphql";
 import NextLink from "next/link";
+import { isServer } from "../utils/isServer";
 
 interface PostProps {
   post: PostSnippetFragment;
@@ -13,6 +25,11 @@ const Post: React.FC<PostProps> = ({ post }) => {
     "upvote-loading" | "downvote-loading" | "not-loading"
   >("not-loading");
   const [, vote] = useVoteMutation();
+  const [{ fetching: deleteFetching }, deletePost] = useDeletePostMutation();
+  const [{ data: meData, fetching: meFetching }] = useMeQuery({
+    pause: isServer(),
+  });
+
   return (
     <Flex p={5} shadow="md" borderWidth="1px">
       <Flex
@@ -74,14 +91,44 @@ const Post: React.FC<PostProps> = ({ post }) => {
           </IconButton>
         </Box>
       </Flex>
-      <Box>
+      <Box flex={1}>
         <NextLink href="/post/[id]" as={`/post/${post.id}`}>
           <Link>
             <Heading fontSize="xl">{post.title}</Heading>
           </Link>
         </NextLink>
         <Text as="sub">Posted by {post.creator.username}</Text>
-        <Text mt={4}>{post.textSnippet}</Text>
+        <Flex alignItems="center">
+          <Text flex={1} mt={4}>
+            {post.textSnippet}
+          </Text>
+          {!meFetching &&
+          meData &&
+          meData.me &&
+          meData.me.id === post.creator.id ? (
+            <Box ml="auto">
+              <NextLink href="/post/edit/[id]" as={`/post/edit/${post.id}`}>
+                <IconButton
+                  as={Link}
+                  mx={2}
+                  icon={<EditIcon />}
+                  aria-label="Edit Post"
+                  variant="outline"
+                />
+              </NextLink>
+              <IconButton
+                mx={2}
+                icon={<DeleteIcon />}
+                aria-label="Delete Post"
+                variant="outline"
+                isLoading={deleteFetching}
+                onClick={async () => {
+                  await deletePost({ id: post.id });
+                }}
+              />
+            </Box>
+          ) : null}
+        </Flex>
       </Box>
     </Flex>
   );

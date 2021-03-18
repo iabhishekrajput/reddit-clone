@@ -25,9 +25,9 @@ const Index = () => {
         <div>Loading</div>
       ) : (
         <Stack spacing={8}>
-          {data!.getAllPosts.posts.map((post) => (
-            <Post key={post.id} post={post} />
-          ))}
+          {data!.getAllPosts.posts.map((post) =>
+            !post ? null : <Post key={post.id} post={post} />
+          )}
         </Stack>
       )}
       {data && data.getAllPosts.hasMore ? (
@@ -35,14 +35,14 @@ const Index = () => {
           <Button
             m="auto"
             my={8}
-            onClick={() =>
+            onClick={() => {
+              let index = data!.getAllPosts.posts.length;
+              while (index-- && !data!.getAllPosts.posts[index]);
               setVariables((prevState) => ({
                 limit: prevState.limit,
-                cursor: data!.getAllPosts.posts[
-                  data!.getAllPosts.posts.length - 1
-                ].createdAt,
-              }))
-            }
+                cursor: data!.getAllPosts.posts[index].createdAt,
+              }));
+            }}
             isLoading={fetching}
           >
             Load More
