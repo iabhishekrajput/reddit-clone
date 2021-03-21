@@ -17,6 +17,7 @@ import { MyContext } from "../types";
 import { isAuth } from "../middleware/isAuth";
 import { getConnection } from "typeorm";
 import { Updoot } from "../entities/Updoot";
+import { User } from "../entities/User";
 
 @InputType()
 class PostInput {
@@ -49,27 +50,24 @@ export class PostResolver {
 
   @FieldResolver(() => Int)
   async voteStatus(
-    @Root() root: Post,
-    @Ctx() { req }: MyContext
+    @Root() post: Post,
+    @Ctx() { req, updootLoader }: MyContext
   ): Promise<number> {
-    const userId = req.session.userId;
-
-    if (!userId) {
+    if (!req.session.userId) {
       return 0;
     }
 
-    const updoot = await Updoot.findOne({
-      where: {
-        postId: root.id,
-        userId,
-      },
+    const updoot = await updootLoader.load({
+      postId: post.id,
+      userId: req.session.userId,
     });
 
-    if (updoot) {
-      return updoot.value;
-    }
+    return updoot ? updoot.value : 0;
+  }
 
-    return 0;
+  @FieldResolver(() => User)
+  creator(@Root() post: Post, @Ctx() { userLoader }: MyContext) {
+    return userLoader.load(post.creatorId);
   }
 
   @Mutation(() => Boolean)
@@ -131,7 +129,6 @@ export class PostResolver {
     const results = getConnection()
       .getRepository(Post)
       .createQueryBuilder("post")
-      .innerJoinAndSelect("post.creator", "creator")
       .orderBy("post.createdAt", "DESC")
       .take(realLimitPlusOne);
 
@@ -151,7 +148,7 @@ export class PostResolver {
 
   @Query(() => Post, { nullable: true })
   getPostById(@Arg("id", () => Int) id: number): Promise<Post | undefined> {
-    return Post.findOne(id, { relations: ["creator"] });
+    return Post.findOne(id);
   }
 
   @Mutation(() => Post)

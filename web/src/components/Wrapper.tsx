@@ -7,10 +7,7 @@ interface WrapperProps {
   variant?: WrapperVariant;
 }
 
-export const Wrapper: React.FC<WrapperProps> = ({
-  children,
-  variant = "regular",
-}) => {
+const Wrapper: React.FC<WrapperProps> = ({ children, variant = "regular" }) => {
   return (
     <Box
       mt={8}
@@ -22,3 +19,5 @@ export const Wrapper: React.FC<WrapperProps> = ({
     </Box>
   );
 };
+
+export default Wrapper;

@@ -14,17 +14,19 @@ import NextLink from "next/link";
 import { useLogoutMutation, useMeQuery } from "../generated/graphql";
 import { isServer } from "../utils/isServer";
 import { ChevronDownIcon } from "@chakra-ui/icons";
+import { useApolloClient } from "@apollo/client";
 
 interface NavBarProps {}
 
-export const NavBar: React.FC<NavBarProps> = ({}) => {
-  const [{ data, fetching }] = useMeQuery({
-    pause: isServer(),
+const NavBar: React.FC<NavBarProps> = ({}) => {
+  const apolloClient = useApolloClient();
+  const { data, loading } = useMeQuery({
+    skip: isServer(),
   });
-  const [, logout] = useLogoutMutation();
+  const [logout] = useLogoutMutation();
   let body = null;
 
-  if (!data?.me || fetching) {
+  if (!data?.me || loading) {
     body = (
       <Flex>
         <NextLink href="/login">
@@ -64,8 +66,9 @@ export const NavBar: React.FC<NavBarProps> = ({}) => {
             </Link>
             <MenuList>
               <MenuItem
-                onClick={() => {
-                  logout();
+                onClick={async () => {
+                  await logout();
+                  await apolloClient.resetStore();
                 }}
               >
                 <Text color="black">Logout</Text>
@@ -94,3 +97,5 @@ export const NavBar: React.FC<NavBarProps> = ({}) => {
     </Flex>
   );
 };
+
+export default NavBar;

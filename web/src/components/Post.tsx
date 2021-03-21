@@ -12,22 +12,64 @@ import {
   useDeletePostMutation,
   useMeQuery,
   useVoteMutation,
+  VoteMutation,
 } from "../generated/graphql";
 import NextLink from "next/link";
 import { isServer } from "../utils/isServer";
+import { ApolloCache, gql } from "@apollo/client";
 
 interface PostProps {
   post: PostSnippetFragment;
 }
 
+const updateAfterVote = (
+  value: number,
+  postId: number,
+  cache: ApolloCache<VoteMutation>
+) => {
+  const data = cache.readFragment<{
+    id: number;
+    points: number;
+    voteStatus: number | null;
+  }>({
+    id: "Post:" + postId,
+    fragment: gql`
+      fragment _ on Post {
+        id
+        points
+        voteStatus
+      }
+    `,
+  });
+
+  if (data) {
+    if (data.voteStatus === value) {
+      return;
+    }
+
+    const newPoints =
+      (data.points as number) + (!data.voteStatus ? 1 : 2) * value;
+    cache.writeFragment({
+      id: "Post:" + postId,
+      fragment: gql`
+        fragment _ on Post {
+          points
+          voteStatus
+        }
+      `,
+      data: { points: newPoints, voteStatus: value },
+    });
+  }
+};
+
 const Post: React.FC<PostProps> = ({ post }) => {
   const [voteLoading, setVoteLoading] = useState<
     "upvote-loading" | "downvote-loading" | "not-loading"
   >("not-loading");
-  const [, vote] = useVoteMutation();
-  const [{ fetching: deleteFetching }, deletePost] = useDeletePostMutation();
-  const [{ data: meData, fetching: meFetching }] = useMeQuery({
-    pause: isServer(),
+  const [vote] = useVoteMutation();
+  const [deletePost, { loading: deleteFetching }] = useDeletePostMutation();
+  const { data: meData, loading: meFetching } = useMeQuery({
+    skip: isServer(),
   });
 
   return (
@@ -52,11 +94,16 @@ const Post: React.FC<PostProps> = ({ post }) => {
             }
             isLoading={voteLoading === "upvote-loading"}
             onClick={async () => {
+              const value = 1;
+              const postId = post.id;
               if (post.voteStatus === 1) {
                 return;
               }
               setVoteLoading("upvote-loading");
-              await vote({ postId: post.id, value: 1 });
+              await vote({
+                variables: { postId: post.id, value: 1 },
+                update: (cache) => updateAfterVote(value, postId, cache),
+              });
               setVoteLoading("not-loading");
             }}
           >
@@ -79,11 +126,16 @@ const Post: React.FC<PostProps> = ({ post }) => {
             }
             isLoading={voteLoading === "downvote-loading"}
             onClick={async () => {
-              if (post.voteStatus === -1) {
+              const value = -1;
+              const postId = post.id;
+              if (post.voteStatus === value) {
                 return;
               }
               setVoteLoading("downvote-loading");
-              await vote({ postId: post.id, value: -1 });
+              await vote({
+                variables: { postId, value },
+                update: (cache) => updateAfterVote(value, postId, cache),
+              });
               setVoteLoading("not-loading");
             }}
           >
@@ -123,7 +175,12 @@ const Post: React.FC<PostProps> = ({ post }) => {
                 variant="outline"
                 isLoading={deleteFetching}
                 onClick={async () => {
-                  await deletePost({ id: post.id });
+                  await deletePost({
+                    variables: { id: post.id },
+                    update: (cache) => {
+                      cache.evict({ id: "Post:" + post.id });
+                    },
+                  });
                 }}
               />
             </Box>

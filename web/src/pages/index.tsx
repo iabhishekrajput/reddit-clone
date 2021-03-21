@@ -1,27 +1,31 @@
-import React, { useState } from "react";
+import React from "react";
 import { Box, Button, Flex, Stack } from "@chakra-ui/react";
-import { withUrqlClient } from "next-urql";
-import { createUrqlClient } from "../utils/createUrqlClient";
 import { useGetAllPostsQuery } from "../generated/graphql";
 import { Layout } from "../components/Layout";
 import Post from "../components/Post";
+import { withApollo } from "../utils/withApollo";
 
 const Index = () => {
-  const [variables, setVariables] = useState({
-    limit: 15,
-    cursor: null as null | string,
-  });
-  const [{ data, fetching }] = useGetAllPostsQuery({
-    variables,
+  const { data, error, loading, fetchMore, variables } = useGetAllPostsQuery({
+    variables: {
+      limit: 15,
+      cursor: null,
+    },
+    notifyOnNetworkStatusChange: true,
   });
 
-  if (!data && !fetching) {
-    return <div>Some Error Occurred!</div>;
+  if (!data && !loading) {
+    return (
+      <div>
+        <div>Some Error Occurred!</div>
+        <div>{error?.message}</div>
+      </div>
+    );
   }
 
   return (
     <Layout>
-      {!data && fetching ? (
+      {!data && loading ? (
         <div>Loading</div>
       ) : (
         <Stack spacing={8}>
@@ -35,15 +39,17 @@ const Index = () => {
           <Button
             m="auto"
             my={8}
-            onClick={() => {
-              let index = data!.getAllPosts.posts.length;
-              while (index-- && !data!.getAllPosts.posts[index]);
-              setVariables((prevState) => ({
-                limit: prevState.limit,
-                cursor: data!.getAllPosts.posts[index].createdAt,
-              }));
+            onClick={async () => {
+              await fetchMore({
+                variables: {
+                  limit: variables?.limit,
+                  cursor: data!.getAllPosts.posts[
+                    data!.getAllPosts.posts.length - 1
+                  ].createdAt,
+                },
+              });
             }}
-            isLoading={fetching}
+            isLoading={loading}
           >
             Load More
           </Button>
@@ -59,4 +65,4 @@ const Index = () => {
   );
 };
 
-export default withUrqlClient(createUrqlClient, { ssr: true })(Index);
+export default withApollo({ ssr: true })(Index);

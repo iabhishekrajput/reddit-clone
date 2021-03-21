@@ -1,15 +1,14 @@
 import React from "react";
 import { Box, Button, Skeleton, SkeletonText } from "@chakra-ui/react";
 import { Formik, Form } from "formik";
-import { withUrqlClient } from "next-urql";
 import { InputField } from "../../../components/InputField";
 import { Layout } from "../../../components/Layout";
-import { createUrqlClient } from "../../../utils/createUrqlClient";
 import {
   useGetPostByIdQuery,
   useUpdatePostMutation,
 } from "../../../generated/graphql";
 import { useRouter } from "next/router";
+import { withApollo } from "../../../utils/withApollo";
 
 interface EditPostProps {}
 
@@ -17,21 +16,21 @@ const EditPost: React.FC<EditPostProps> = ({}) => {
   const router = useRouter();
   const id =
     typeof router.query.id === "string" ? parseInt(router.query.id) : -1;
-  const [{ data, fetching }] = useGetPostByIdQuery({
-    pause: id === -1,
+  const { data, loading } = useGetPostByIdQuery({
+    skip: id === -1,
     variables: {
       id,
     },
   });
 
-  const [, updatePost] = useUpdatePostMutation();
+  const [updatePost] = useUpdatePostMutation();
 
-  if (fetching) {
+  if (loading) {
     return (
       <Layout>
         <Box>
-          <Skeleton isLoaded={!fetching} height={10} />
-          <SkeletonText isLoaded={!fetching} mt="4" noOfLines={4} spacing="4" />
+          <Skeleton isLoaded={!loading} height={10} />
+          <SkeletonText isLoaded={!loading} mt="4" noOfLines={4} spacing="4" />
         </Box>
       </Layout>
     );
@@ -98,15 +97,17 @@ const EditPost: React.FC<EditPostProps> = ({}) => {
           text: data?.getPostById?.text ? data.getPostById.text : "",
         }}
         onSubmit={async (values) => {
-          const { error } = await updatePost({
-            id,
-            title: values.title,
-            text: values.text,
+          const { errors } = await updatePost({
+            variables: {
+              id,
+              title: values.title,
+              text: values.text,
+            },
           });
-          if (!error) {
+          if (!errors) {
             router.push("/");
           } else {
-            console.log(error.message);
+            errors.map((e) => console.log(e.message));
           }
         }}
       >
@@ -135,4 +136,4 @@ const EditPost: React.FC<EditPostProps> = ({}) => {
   );
 };
 
-export default withUrqlClient(createUrqlClient, { ssr: true })(EditPost);
+export default withApollo({ ssr: false })(EditPost);

@@ -1,11 +1,10 @@
 import React from "react";
 import { useRouter } from "next/router";
-import { withUrqlClient } from "next-urql";
-import { createUrqlClient } from "../../utils/createUrqlClient";
 import { useGetPostByIdQuery } from "../../generated/graphql";
 import { Layout } from "../../components/Layout";
 import { Heading, Text } from "@chakra-ui/layout";
 import { Box, Skeleton, SkeletonText } from "@chakra-ui/react";
+import { withApollo } from "../../utils/withApollo";
 
 interface PostDetailsProps {}
 
@@ -13,19 +12,19 @@ const PostDetails: React.FC<PostDetailsProps> = ({}) => {
   const router = useRouter();
   const id =
     typeof router.query.id === "string" ? parseInt(router.query.id) : -1;
-  const [{ data, fetching }] = useGetPostByIdQuery({
-    pause: id === -1,
+  const { data, loading } = useGetPostByIdQuery({
+    skip: id === -1,
     variables: {
       id,
     },
   });
 
-  if (fetching) {
+  if (loading) {
     return (
       <Layout>
         <Box>
-          <Skeleton isLoaded={!fetching} height={10} />
-          <SkeletonText isLoaded={!fetching} mt="4" noOfLines={4} spacing="4" />
+          <Skeleton isLoaded={!loading} height={10} />
+          <SkeletonText isLoaded={!loading} mt="4" noOfLines={4} spacing="4" />
         </Box>
       </Layout>
     );
@@ -94,4 +93,4 @@ const PostDetails: React.FC<PostDetailsProps> = ({}) => {
   );
 };
 
-export default withUrqlClient(createUrqlClient, { ssr: true })(PostDetails);
+export default withApollo({ ssr: true })(PostDetails);

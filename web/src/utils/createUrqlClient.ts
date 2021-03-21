@@ -5,7 +5,7 @@ import {
   stringifyVariables,
 } from "urql";
 import { gql } from "@urql/core";
-import { cacheExchange, Resolver } from "@urql/exchange-graphcache";
+import { cacheExchange, Resolver, Cache } from "@urql/exchange-graphcache";
 import {
   LoginMutation,
   MeQuery,
@@ -74,6 +74,16 @@ const cursorPagination = (): Resolver => {
   };
 };
 
+function invalidateCache(cache: Cache) {
+  const allFields = cache.inspectFields("Query");
+  const fieldInfos = allFields.filter(
+    (info) => info.fieldName === "getAllPosts"
+  );
+  fieldInfos.forEach((fi) => {
+    cache.invalidate("Query", "getAllPosts", fi.arguments || {});
+  });
+}
+
 export const createUrqlClient = (ssrExchange: any, ctx: any) => {
   let cookie = undefined;
 
@@ -138,13 +148,7 @@ export const createUrqlClient = (ssrExchange: any, ctx: any) => {
               }
             },
             createPost: (_result, _, cache, __) => {
-              const allFields = cache.inspectFields("Query");
-              const fieldInfos = allFields.filter(
-                (info) => info.fieldName === "getAllPosts"
-              );
-              fieldInfos.forEach((fi) => {
-                cache.invalidate("Query", "getAllPosts", fi.arguments || {});
-              });
+              invalidateCache(cache);
             },
             login: (_result, _, cache, __) => {
               updateQuery<LoginMutation, MeQuery>(
@@ -161,6 +165,7 @@ export const createUrqlClient = (ssrExchange: any, ctx: any) => {
                   }
                 }
               );
+              invalidateCache(cache);
             },
             register: (_result, _, cache, __) => {
               updateQuery<RegisterMutation, MeQuery>(
@@ -209,6 +214,7 @@ export const createUrqlClient = (ssrExchange: any, ctx: any) => {
                   }
                 }
               );
+              invalidateCache(cache);
             },
           },
         },
